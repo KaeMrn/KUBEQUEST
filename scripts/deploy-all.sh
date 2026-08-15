@@ -58,8 +58,21 @@ kubectl apply -k "${CLUSTER_DIR}/security/rbac"
 echo "== 11. App secrets (env: ${ENV}) =="
 "${ROOT_DIR}/scripts/generate-app-secrets.sh" "app-${ENV}"
 
-echo "== 12. App + PostgreSQL (env: ${ENV}) =="
+echo "== 12. Guard: has the real app image been built and pushed? =="
+if grep -q "REPLACE_ME/kubequest-app" "${ROOT_DIR}/app/helm-chart/values.yaml"; then
+  echo "app/helm-chart/values.yaml still has the placeholder image."
+  echo "Run scripts/build-and-push-app-image.sh <registry>/<repo> <tag> first,"
+  echo "then set image.repository/image.tag in values.yaml to match."
+  exit 1
+fi
+
+echo "== 13. App + MySQL (env: ${ENV}) =="
 kubectl apply -k "${APP_DIR}/overlays/${ENV}"
+
+echo "== 14. Wait for MySQL, then run migrations, then wait for the app =="
+kubectl -n "app-${ENV}" rollout status statefulset/kubequest-db-mysql --timeout=180s
+LATEST_MIGRATE_JOB="$(kubectl -n "app-${ENV}" get jobs -l app.kubernetes.io/component=migration -o jsonpath='{.items[-1:].metadata.name}')"
+kubectl -n "app-${ENV}" wait --for=condition=complete "job/${LATEST_MIGRATE_JOB}" --timeout=120s
 wait_for "app-${ENV}" kubequest-app
 
 echo

@@ -1,9 +1,11 @@
 apiVersion: v2
 name: kubequest-app
 description: >
-  Helm chart converting the docker-compose application provided on Gandalf
-  into Kubernetes-native resources. The image/env in values.yaml are
-  placeholders — see README.md "Known gap" before using this for real.
+  Helm chart converting the Laravel "counter" sample app (app/src, provided
+  on Gandalf as sample-app-master.zip) from its docker-compose form into
+  Kubernetes-native resources: Deployment, Service, Ingress, HPA, PDB,
+  ConfigMap, migration Job. Pairs with the official bitnami/mysql chart via
+  app/gitops (the app's real DB engine, per app/src/docker-compose.yaml).
 type: application
 version: 0.1.0
 appVersion: "0.1.0"

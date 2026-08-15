@@ -33,20 +33,25 @@ cluster/                  GitOps repo for reusable cluster-management components
     rbac/                  Least-privilege ServiceAccounts (dashboard viewer, CI deployer)
     cert-manager/          Let's Encrypt via cert-manager (production TLS)
 app/
-  helm-chart/              Helm chart for the app converted from docker-compose
-  gitops/                  Kustomize repo deploying app + official postgresql chart
+  src/                     The real app: Laravel 8 "counter" demo (PHP 8.2.8-apache + MySQL)
+  helm-chart/              Helm chart deploying app/src, incl. a DB-migration Job
+  gitops/                  Kustomize repo deploying app + official bitnami/mysql chart
     overlays/staging/      1 replica, relaxed HPA, staging.app.kubequest.local
     overlays/production/   3+ replicas, TLS, app.kubequest.io
-    backup/                Daily pg_dump CronJob + PVC
-scripts/                  Bootstrap, deploy, verify, load-test, rollback-demo
+    backup/                Daily mysqldump CronJob + PVC
+scripts/                  Bootstrap, image build/push, deploy, verify, load-test, rollback-demo
 ```
 
-## Known gap
-`app/helm-chart` was built structurally complete but with a **placeholder
-image** — the real docker-compose app from Gandalf was never supplied to
-this session. See `app/helm-chart/README.md` "Known gap" for exactly what
-to swap in once you have it. Everything else (cluster components, security,
-GitOps wiring, automation) is deployable as-is.
+## Before first deploy
+The app image isn't built for you — `app/helm-chart/values.yaml` ships with
+an obviously-fake `image.repository` so a forgotten step fails loudly
+instead of silently deploying garbage:
+```bash
+scripts/build-and-push-app-image.sh <registry>/<repo> <tag>
+# then set image.repository/image.tag in app/helm-chart/values.yaml to match
+```
+`scripts/deploy-all.sh` checks for this and refuses to proceed if it's still
+the placeholder.
 
 ## How to rebuild from scratch (defense day)
 

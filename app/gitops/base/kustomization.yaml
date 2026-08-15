@@ -5,7 +5,7 @@ namespace: app
 
 resources:
   - namespace.yaml
-  - ../backup/cronjob-pg-backup.yaml
+  - ../backup/cronjob-mysql-backup.yaml
   # Namespaced RBAC for the deploy automation's ServiceAccount — lives under
   # cluster/security/rbac because it's a security-review artifact, but it's
   # applied here because it targets the `app` namespace this file creates.
@@ -29,12 +29,12 @@ helmCharts:
     # of re-invoking Helm with different values, so one `helm template` run
     # is shared by every environment.
 
-  - name: postgresql
+  - name: mysql
     repo: https://charts.bitnami.com/bitnami
-    version: 16.2.3
+    version: 11.1.16
     releaseName: kubequest-db
     namespace: app
-    valuesFile: ../postgresql-values.yaml
+    valuesFile: ../mysql-values.yaml
 
 commonLabels:
   app.kubernetes.io/part-of: kubequest

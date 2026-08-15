@@ -1,0 +1,38 @@
+# Official Bitnami mysql chart values. Matches app/src/docker-compose.yaml's
+# `db` service (mysql:8.0, single instance — the real app has no read-replica
+# requirement, so this stays standalone rather than forcing replication that
+# doesn't reflect the actual app).
+# Verify keys against `helm show values bitnami/mysql` for the pinned chart
+# version before applying — Bitnami restructures keys across major versions.
+
+architecture: standalone
+
+auth:
+  # Never plaintext here. Created by scripts/generate-app-secrets.sh, which
+  # populates keys: mysql-root-password, mysql-password.
+  existingSecret: mysql-auth
+  username: kubequest_app
+  database: kubequest_app
+
+primary:
+  persistence:
+    enabled: true
+    size: 10Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+  podAntiAffinityPreset: soft # only 1 replica anyway; "soft" avoids a scheduling deadlock on a small cluster
+
+metrics:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi

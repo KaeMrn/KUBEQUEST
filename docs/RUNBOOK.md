@@ -42,7 +42,11 @@ kubectl apply -f cluster/security/cert-manager/cluster-issuer.yaml
 kubectl apply -k cluster/security/auth
 kubectl apply -k cluster/security/rbac
 kubectl apply -k app/gitops/overlays/staging
+kubectl -n app-staging rollout status statefulset/kubequest-db-mysql
+kubectl -n app-staging wait --for=condition=complete job -l app.kubernetes.io/component=migration
 ```
+
+Before that last block, the real app image must exist: `scripts/build-and-push-app-image.sh <registry>/<repo> <tag>`, then set `image.repository`/`image.tag` in `app/helm-chart/values.yaml`. `scripts/deploy-all.sh` refuses to proceed past this point if the placeholder image is still set.
 
 ## 3. Demonstrate auto-scaling
 
@@ -73,13 +77,14 @@ self-revert a stuck rollout on its own.
 | Monitoring stack | `cluster/monitoring` |
 | GitOps repo (Kustomize) | every `kustomization.yaml` under `cluster/` and `app/gitops/` |
 | Logging stack | `cluster/logging` |
-| Helm chart for app + official DB chart | `app/helm-chart`, `app/gitops` (bitnami/postgresql) |
+| Helm chart for app + official DB chart | `app/helm-chart`, `app/gitops` (bitnami/mysql — matches `app/src/docker-compose.yaml`) |
 | Automated deployment + status check | `scripts/deploy-all.sh`, `scripts/verify-deployment.sh` |
 | Resource limits/requests | every `values.yaml` + `app/helm-chart/templates/deployment.yaml`; enforced by OPA (`cluster/security/opa-gatekeeper`) |
 | Secrets | `scripts/generate-app-secrets.sh`, `cluster/security/auth/generate-secrets.sh` — never committed in plaintext |
 | Labels | `commonLabels` in every `kustomization.yaml`; enforced by OPA |
 | Redundancy (replicas + affinity) | `app/helm-chart/values.yaml` (anti-affinity), `cluster/ingress-nginx/values.yaml` |
-| Persistent storage + backup | `app/gitops/postgresql-values.yaml` (PVCs), `app/gitops/backup/cronjob-pg-backup.yaml` |
+| Persistent storage + backup | `app/gitops/mysql-values.yaml` (PVCs), `app/gitops/backup/cronjob-mysql-backup.yaml` |
+| Database migrations + verification | `app/helm-chart/templates/migrate-job.yaml`, waited on explicitly by `scripts/deploy-all.sh` |
 | Validating webhook (OPA) | `cluster/security/opa-gatekeeper` |
 | Auth to API + tools (dex/oauth-proxy) | `cluster/security/auth` |
 | Terraform infra | `infra/terraform` |
@@ -88,8 +93,13 @@ self-revert a stuck rollout on its own.
 | Zero-downtime deploys (bonus) | `app/helm-chart/values.yaml` `strategy.rollingUpdate` |
 | Private registry pull (bonus) | `app/helm-chart/values.yaml` `imagePullSecrets` (wire in once there's a real private image) |
 
-## Known gap to disclose if asked
-The app itself is a structurally-complete but content-generic chart — see
-`app/helm-chart/README.md`. Say so directly if asked to open the actual
-application in a browser; everything around it (cluster, security, GitOps,
-automation) is real and running.
+## Before the defense: things that need a real value, not a placeholder
+- `app/helm-chart/values.yaml` `image.repository`/`image.tag` — build+push
+  first with `scripts/build-and-push-app-image.sh`.
+- `cluster/security/cert-manager/cluster-issuer.yaml` `spec.acme.email`, and
+  `app.kubequest.io` in `app/gitops/overlays/production` — placeholder
+  domain you don't own; either point a real domain's DNS at the ingress
+  node's public IP or skip the TLS/production demo.
+- `kubequest.local` / `app.kubequest.local` hosts (dashboard, Grafana,
+  staging app) — add to `/etc/hosts` on the machine you present from,
+  pointing at the ingress node's public IP.

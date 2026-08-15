@@ -1,0 +1,39 @@
+{{- if .Values.migration.enabled }}
+# Not a Helm hook — see the comment on `migration:` in values.yaml for why.
+# Named after the image tag so a new deploy creates a new Job (Jobs are
+# immutable) while re-deploying the same tag is a no-op `kubectl apply`.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "kubequest-app.name" . }}-migrate-{{ .Values.image.tag | replace "." "-" | replace ":" "-" | trunc 40 | trimSuffix "-" }}
+  labels:
+    {{- include "kubequest-app.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migration
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        {{- include "kubequest-app.labels" . | nindent 8 }}
+        app.kubernetes.io/component: migration
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["php", "artisan", "migrate", "--force"]
+          envFrom:
+            - configMapRef:
+                name: {{ include "kubequest-app.name" . }}
+            - secretRef:
+                name: {{ .Values.secretName }}
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+{{- end }}

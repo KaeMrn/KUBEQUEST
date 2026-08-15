@@ -39,9 +39,9 @@ check "oauth2-proxy"               kubectl -n auth rollout status deployment/oau
 echo
 echo "== App (namespace app-${ENV}) =="
 check "app deployment"             kubectl -n "app-${ENV}" rollout status deployment/kubequest-app --timeout=10s
-check "postgresql primary"         kubectl -n "app-${ENV}" rollout status statefulset/kubequest-db-postgresql-primary --timeout=10s
-check "postgresql read replicas"   kubectl -n "app-${ENV}" rollout status statefulset/kubequest-db-postgresql-read --timeout=10s
-check "backup CronJob exists"      kubectl -n "app-${ENV}" get cronjob/postgresql-backup -o name
+check "mysql"                      kubectl -n "app-${ENV}" rollout status statefulset/kubequest-db-mysql --timeout=10s
+check "migration job completed"    bash -c "kubectl -n app-${ENV} get jobs -l app.kubernetes.io/component=migration -o jsonpath='{.items[-1:].status.succeeded}' | grep -q 1"
+check "backup CronJob exists"      kubectl -n "app-${ENV}" get cronjob/mysql-backup -o name
 
 echo
 if [ "$FAILED" -eq 0 ]; then

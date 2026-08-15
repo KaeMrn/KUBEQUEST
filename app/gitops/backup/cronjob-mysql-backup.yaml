@@ -1,13 +1,13 @@
-# Daily pg_dump of the app database onto its own PVC, satisfying "implement
+# Daily mysqldump of the app database onto its own PVC, satisfying "implement
 # usual backup system using Kubernetes" for the database's persistent storage.
 # This is a minimal, real backup mechanism (not a stub): it actually runs
-# pg_dump against the primary and keeps the last 7 days of dumps. For
-# anything beyond a school project, ship these dumps off-cluster (S3/etc.)
-# instead of trusting a second PVC on the same infrastructure.
+# mysqldump against kubequest-db-mysql and keeps the last 7 days of dumps.
+# For anything beyond a school project, ship these dumps off-cluster
+# (S3/etc.) instead of trusting a second PVC on the same infrastructure.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: postgresql-backups
+  name: mysql-backups
   labels:
     app.kubernetes.io/part-of: kubequest
 spec:
@@ -19,7 +19,7 @@ spec:
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: postgresql-backup
+  name: mysql-backup
   labels:
     app.kubernetes.io/part-of: kubequest
 spec:
@@ -32,13 +32,13 @@ spec:
       template:
         metadata:
           labels:
-            app.kubernetes.io/name: postgresql-backup
+            app.kubernetes.io/name: mysql-backup
             app.kubernetes.io/part-of: kubequest
         spec:
           restartPolicy: OnFailure
           containers:
-            - name: pg-dump
-              image: bitnami/postgresql:16
+            - name: mysqldump
+              image: bitnami/mysql:8.0
               resources:
                 requests:
                   cpu: 100m
@@ -47,19 +47,19 @@ spec:
                   cpu: 500m
                   memory: 256Mi
               env:
-                - name: PGPASSWORD
+                - name: MYSQL_PWD
                   valueFrom:
                     secretKeyRef:
-                      name: postgresql-auth
-                      key: password
+                      name: mysql-auth
+                      key: mysql-password
               command:
-                - /bin/sh
+                - /bin/bash
                 - -c
                 - |
                   set -euo pipefail
                   STAMP=$(date +%Y%m%d-%H%M%S)
-                  pg_dump -h kubequest-db-postgresql-primary -U kubequest -d kubequest \
-                    -f /backups/kubequest-${STAMP}.sql
+                  mysqldump -h kubequest-db-mysql -u kubequest_app kubequest_app \
+                    > /backups/kubequest-${STAMP}.sql
                   # keep last 7 days only
                   find /backups -name '*.sql' -mtime +7 -delete
               volumeMounts:
@@ -68,4 +68,4 @@ spec:
           volumes:
             - name: backups
               persistentVolumeClaim:
-                claimName: postgresql-backups
+                claimName: mysql-backups

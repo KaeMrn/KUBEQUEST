@@ -1,16 +1,16 @@
 # ============================================================================
-# PLACEHOLDER VALUES. The real docker-compose app (from Gandalf) hasn't been
-# swapped in yet — see app/helm-chart/README.md "Known gap". Everything
-# below is wired correctly and deployable as-is (with a stand-in nginx
-# image) so the chart, GitOps repo, and automation can be exercised end to
-# end; only `image.repository`/`env`/`containerPort` need to change once the
-# real app is available.
+# Real app: the Laravel "counter" sample app from Gandalf (app/src), built
+# from app/src/Dockerfile via scripts/build-and-push-app-image.sh. Only
+# image.repository/tag need to change per where you pushed the built image —
+# everything else here matches the app's actual requirements.
 # ============================================================================
 
 replicaCount: 2
 
 image:
-  repository: nginxdemos/hello   # TODO: replace with the real app image
+  # Build+push with: scripts/build-and-push-app-image.sh <registry>/<repo> <tag>
+  # then set this to match. Left as a placeholder until you've pushed one.
+  repository: REPLACE_ME/kubequest-app
   tag: "latest"
   pullPolicy: IfNotPresent
 
@@ -18,7 +18,8 @@ image:
 imagePullSecrets: []
 # - name: regcred
 
-containerPort: 8080
+# php:8.2.8-apache in app/src/Dockerfile serves on port 80.
+containerPort: 80
 
 service:
   type: ClusterIP
@@ -35,10 +36,10 @@ ingress:
 resources:
   requests:
     cpu: 100m
-    memory: 128Mi
+    memory: 192Mi
   limits:
     cpu: 500m
-    memory: 256Mi
+    memory: 384Mi
 
 # Redundancy: spread replicas across nodes, never co-locate 2 replicas on
 # the same node.
@@ -55,7 +56,8 @@ affinity:
 
 # Zero-downtime rolling updates: never go below `replicaCount`, allow 1 extra
 # pod during the rollout, and only route traffic once the readiness probe
-# passes (see deployment.yaml).
+# passes (see deployment.yaml). "/" renders the counter view via a DB query,
+# so it's a real dependency check, not a static 200.
 strategy:
   type: RollingUpdate
   rollingUpdate:
@@ -82,14 +84,34 @@ podDisruptionBudget:
   enabled: true
   minAvailable: 1
 
-# Non-secret configuration. Secrets (DB credentials) come from an
-# *externally created* Secret referenced by secretName below — see
-# ../gitops/README.md "Secrets" and scripts/generate-app-secrets.sh.
+# Non-secret Laravel config. DB_PASSWORD and APP_KEY come from the Secret
+# (secretName below), never from here.
 config:
+  APP_NAME: KubeQuest
   APP_ENV: production
-  LOG_LEVEL: info
+  APP_DEBUG: "false"
+  LOG_CHANNEL: stack
+  LOG_LEVEL: error
+  DB_CONNECTION: mysql
+  DB_HOST: kubequest-db-mysql # bitnami/mysql release "kubequest-db" service name
+  DB_PORT: "3306"
+  DB_DATABASE: kubequest_app
+  DB_USERNAME: kubequest_app
+  CACHE_DRIVER: file
+  SESSION_DRIVER: file
+  QUEUE_CONNECTION: sync
 
-secretName: app-db-credentials # created by scripts/generate-app-secrets.sh, not by this chart
+# Created by scripts/generate-app-secrets.sh — keys: APP_KEY, DB_PASSWORD.
+secretName: app-db-credentials
+
+# Runs `php artisan migrate --force` as a Job alongside the Deployment.
+# NOT a Helm lifecycle hook: this whole chart is rendered via `helm template`
+# under Kustomize (see app/gitops/base), which does not execute Helm's
+# install/upgrade hook ordering — a `helm.sh/hook` annotation here would be
+# inert. Real sequencing (wait for this Job before trusting the app) is done
+# explicitly by scripts/deploy-all.sh instead. See templates/migrate-job.yaml.
+migration:
+  enabled: true
 
 serviceAccount:
   create: true
