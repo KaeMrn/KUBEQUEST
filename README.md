@@ -37,21 +37,21 @@ app/
   helm-chart/              Helm chart deploying app/src, incl. a DB-migration Job
   gitops/                  Kustomize repo deploying app + official bitnami/mysql chart
     overlays/staging/      1 replica, relaxed HPA, staging.app.kubequest.local
-    overlays/production/   3+ replicas, TLS, app.kubequest.io
+    overlays/production/   3+ replicas, TLS, app.kubequest.local
     backup/                Daily mysqldump CronJob + PVC
 scripts/                  Bootstrap, image build/push, deploy, verify, load-test, rollback-demo
 ```
 
 ## Before first deploy
-The app image isn't built for you — `app/helm-chart/values.yaml` ships with
-an obviously-fake `image.repository` so a forgotten step fails loudly
-instead of silently deploying garbage:
+The app image is built on your laptop (linux/amd64) and sideloaded onto the
+nodes — no public registry or domain required:
 ```bash
-scripts/build-and-push-app-image.sh <registry>/<repo> <tag>
-# then set image.repository/image.tag in app/helm-chart/values.yaml to match
+scripts/build-and-push-app-image.sh kubequest-app v1 --local
+scripts/load-app-image-to-nodes.sh kubequest-app:v1
 ```
-`scripts/deploy-all.sh` checks for this and refuses to proceed if it's still
-the placeholder.
+`app/helm-chart/values.yaml` already points at `kubequest-app:v1`. If you
+do have a registry, omit `--local` and set `image.repository`/`image.tag`
+to match the pushed image.
 
 ## How to rebuild from scratch (defense day)
 

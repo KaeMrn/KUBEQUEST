@@ -46,7 +46,10 @@ kubectl -n app-staging rollout status statefulset/kubequest-db-mysql
 kubectl -n app-staging wait --for=condition=complete job -l app.kubernetes.io/component=migration
 ```
 
-Before that last block, the real app image must exist: `scripts/build-and-push-app-image.sh <registry>/<repo> <tag>`, then set `image.repository`/`image.tag` in `app/helm-chart/values.yaml`. `scripts/deploy-all.sh` refuses to proceed past this point if the placeholder image is still set.
+Before that last block, the real app image must exist on the nodes:
+`scripts/build-and-push-app-image.sh kubequest-app v1 --local` then
+`scripts/load-app-image-to-nodes.sh`. `scripts/deploy-all.sh` refuses to
+proceed if `app/helm-chart/values.yaml` still has the placeholder image.
 
 ## 3. Demonstrate auto-scaling
 
@@ -93,13 +96,14 @@ self-revert a stuck rollout on its own.
 | Zero-downtime deploys (bonus) | `app/helm-chart/values.yaml` `strategy.rollingUpdate` |
 | Private registry pull (bonus) | `app/helm-chart/values.yaml` `imagePullSecrets` (wire in once there's a real private image) |
 
-## Before the defense: things that need a real value, not a placeholder
-- `app/helm-chart/values.yaml` `image.repository`/`image.tag` — build+push
-  first with `scripts/build-and-push-app-image.sh`.
-- `cluster/security/cert-manager/cluster-issuer.yaml` `spec.acme.email`, and
-  `app.kubequest.io` in `app/gitops/overlays/production` — placeholder
-  domain you don't own; either point a real domain's DNS at the ingress
-  node's public IP or skip the TLS/production demo.
-- `kubequest.local` / `app.kubequest.local` hosts (dashboard, Grafana,
-  staging app) — add to `/etc/hosts` on the machine you present from,
-  pointing at the ingress node's public IP.
+## Before the defense: local values, not a public domain
+- App image: already set to `kubequest-app:v1`. Rebuild with
+  `scripts/build-and-push-app-image.sh kubequest-app v1 --local`, then
+  `scripts/load-app-image-to-nodes.sh` after the EC2 nodes exist.
+- Production TLS uses cert-manager's **self-signed** ClusterIssuer and
+  `app.kubequest.local` — no hostname to buy. The Let's Encrypt issuer is
+  still installed (`cluster-issuer.yaml`) as the "how you'd do it for real"
+  talking point.
+- Add these to `/etc/hosts` on the machine you present from, pointing at
+  the ingress node's public IP:
+  `kubequest.local`, `app.kubequest.local`, `staging.app.kubequest.local`.

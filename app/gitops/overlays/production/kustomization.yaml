@@ -7,10 +7,10 @@ resources:
   - ../../base
   # No separate Certificate resource needed: the cert-manager.io/cluster-issuer
   # annotation added to the Ingress below (ingress-shim) makes cert-manager
-  # create and manage the Certificate automatically. Requires cluster/security/
-  # cert-manager to be installed and the ClusterIssuer applied first, and
-  # requires `app.kubequest.io` (placeholder — swap for a domain you actually
-  # own) to resolve to the ingress node's public IP for the HTTP01 challenge.
+  # create and manage the Certificate automatically. School demo uses the
+  # self-signed ClusterIssuer + app.kubequest.local in /etc/hosts (no public
+  # domain). Swap the issuer to letsencrypt-prod and the host to a real
+  # DNS name if you ever want a publicly-trusted cert.
 
 patches:
   - target:
@@ -27,16 +27,17 @@ patches:
     patch: |
       - op: replace
         path: /spec/rules/0/host
-        value: app.kubequest.io
+        value: app.kubequest.local
       - op: add
         path: /metadata/annotations
         value:
-          cert-manager.io/cluster-issuer: letsencrypt-prod
+          cert-manager.io/cluster-issuer: selfsigned-issuer
+          nginx.ingress.kubernetes.io/ssl-redirect: "false"
       - op: add
         path: /spec/tls
         value:
           - hosts:
-              - app.kubequest.io
+              - app.kubequest.local
             secretName: kubequest-app-tls
 
   # Production gets more headroom than the base defaults.

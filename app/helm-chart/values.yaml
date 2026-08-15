@@ -8,10 +8,11 @@
 replicaCount: 2
 
 image:
-  # Build+push with: scripts/build-and-push-app-image.sh <registry>/<repo> <tag>
-  # then set this to match. Left as a placeholder until you've pushed one.
-  repository: REPLACE_ME/kubequest-app
-  tag: "latest"
+  # Built locally for linux/amd64 (the EC2 nodes). No public registry needed:
+  #   scripts/build-and-push-app-image.sh kubequest-app v1 --local
+  #   scripts/load-app-image-to-nodes.sh kubequest-app:v1
+  repository: kubequest-app
+  tag: "v1"
   pullPolicy: IfNotPresent
 
 # Set if pulling from a private registry (bonus objective).

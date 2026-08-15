@@ -8,12 +8,12 @@
 set -euo pipefail
 
 ENV="${1:-staging}"
-HOST="${2:-$( [ "$ENV" = production ] && echo app.kubequest.io || echo staging.app.kubequest.local )}"
+HOST="${2:-$( [ "$ENV" = production ] && echo app.kubequest.local || echo staging.app.kubequest.local )}"
 DURATION="${3:-5m}"
 CONCURRENCY="${4:-50}"
 
-echo "Load-testing https://${HOST}/ for ${DURATION} at concurrency ${CONCURRENCY}..."
+echo "Load-testing http://${HOST}/ for ${DURATION} at concurrency ${CONCURRENCY}..."
 echo "In another terminal, watch: kubectl -n app-${ENV} get hpa kubequest-app -w"
 echo
 
-hey -z "${DURATION}" -c "${CONCURRENCY}" "https://${HOST}/"
+hey -z "${DURATION}" -c "${CONCURRENCY}" "http://${HOST}/"

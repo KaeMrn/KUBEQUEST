@@ -12,15 +12,14 @@ PodDisruptionBudget, a migration Job, and a dedicated ServiceAccount.
 ## Before deploying — build and push the image
 
 The chart doesn't build the image; it just references one. Build it from
-the real Dockerfile and push it somewhere the cluster can pull from:
+the real Dockerfile (linux/amd64, matching the EC2 nodes) and load it
+onto the cluster — no public registry required:
 
-    scripts/build-and-push-app-image.sh <registry>/<repo> <tag>
+    scripts/build-and-push-app-image.sh kubequest-app v1 --local
+    scripts/load-app-image-to-nodes.sh kubequest-app:v1
 
-Then set `image.repository`/`image.tag` in `values.yaml` (or override at
-render time — see `../gitops/README.md`) to match. `values.yaml` ships with
-`REPLACE_ME/kubequest-app:latest` as an obviously-fake placeholder so a
-forgotten step fails loudly (`ErrImagePull`) instead of silently deploying
-garbage.
+`values.yaml` already points at `kubequest-app:v1`. If you do have a
+registry, omit `--local` and set `image.repository`/`image.tag` to match.
 
 ## Database migrations
 

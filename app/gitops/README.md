@@ -13,15 +13,16 @@ single `db: mysql:8.0` service, no replication) together, via Kustomize's
 - `overlays/staging/` — 1 app replica, relaxed HPA bounds, `app-staging`
   namespace, `staging.app.kubequest.local` host.
 - `overlays/production/` — namespace `app-production`, bigger resource
-  limits, HPA floor of 3, TLS via cert-manager (`app.kubequest.io` —
-  **placeholder domain, swap for one you actually control** before this
-  will issue a real Let's Encrypt cert).
+  limits, HPA floor of 3, TLS via cert-manager (`app.kubequest.local` +
+  the self-signed ClusterIssuer — add it to `/etc/hosts`. No public
+  domain required).
 - `backup/` — daily `mysqldump` CronJob + its own PVC.
 
 ## Before deploying
-1. Build and push the real image: `../../scripts/build-and-push-app-image.sh
-   <registry>/<repo> <tag>`, then set `image.repository`/`image.tag` in
-   `../helm-chart/values.yaml`.
+1. Build the real image and load it onto the nodes:
+   `../../scripts/build-and-push-app-image.sh kubequest-app v1 --local`
+   then `../../scripts/load-app-image-to-nodes.sh`. `values.yaml` already
+   points at `kubequest-app:v1`.
 2. Generate secrets (never committed — see below).
 
 ## Secrets

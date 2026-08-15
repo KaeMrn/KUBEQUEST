@@ -47,6 +47,7 @@ echo "== 8. cert-manager (webhook first, ClusterIssuer after) =="
 kubectl apply -k "${CLUSTER_DIR}/security/cert-manager"
 kubectl -n cert-manager wait --for=condition=Available deployment/cert-manager-webhook --timeout=120s
 kubectl apply -f "${CLUSTER_DIR}/security/cert-manager/cluster-issuer.yaml"
+kubectl apply -f "${CLUSTER_DIR}/security/cert-manager/selfsigned-issuer.yaml"
 
 echo "== 9. Auth (Dex + oauth2-proxy) =="
 "${CLUSTER_DIR}/security/auth/generate-secrets.sh"
@@ -61,8 +62,8 @@ echo "== 11. App secrets (env: ${ENV}) =="
 echo "== 12. Guard: has the real app image been built and pushed? =="
 if grep -q "REPLACE_ME/kubequest-app" "${ROOT_DIR}/app/helm-chart/values.yaml"; then
   echo "app/helm-chart/values.yaml still has the placeholder image."
-  echo "Run scripts/build-and-push-app-image.sh <registry>/<repo> <tag> first,"
-  echo "then set image.repository/image.tag in values.yaml to match."
+  echo "Run: scripts/build-and-push-app-image.sh kubequest-app v1 --local"
+  echo "then: scripts/load-app-image-to-nodes.sh"
   exit 1
 fi
 
