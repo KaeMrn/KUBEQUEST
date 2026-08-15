@@ -11,13 +11,16 @@ Without monitoring you cannot know if your cluster is
 healthy, when resources are running low, or why something 
 crashed. Metrics answer the question "what happened?"
 
-## Installation
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-helm install monitoring prometheus-community/kube-prometheus-stack \
-  --namespace monitoring \
-  --create-namespace \
-  -f values.yaml
+## Installation (GitOps, current approach)
+Managed via Kustomize + the official Helm chart:
+
+    kubectl apply -k cluster/monitoring
+
+Prometheus/Alertmanager/Grafana all run with resource requests/limits, 15-day
+Prometheus retention on a 20Gi PVC, and are scheduled onto the dedicated
+`monitoring` node (node-4) via nodeSelector/toleration set up by
+`scripts/label-dedicated-nodes.sh`. The Grafana admin password is never in
+plaintext — the chart auto-generates a Secret, retrieved below.
 
 ## Access Grafana
 From your local machine:

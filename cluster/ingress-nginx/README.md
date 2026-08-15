@@ -9,13 +9,15 @@ Pods have internal IPs not accessible from the internet.
 nginx-ingress acts as the single entry point for all 
 external traffic into the cluster.
 
-## Installation
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-helm repo update
-helm install ingress-nginx ingress-nginx/ingress-nginx \
-  --namespace ingress-nginx \
-  --create-namespace \
-  -f values.yaml
+## Installation (GitOps, current approach)
+Managed via Kustomize + the official Helm chart:
+
+    kubectl apply -k cluster/ingress-nginx
+
+Runs with 2 replicas spread via pod anti-affinity, resource requests/limits,
+a PodDisruptionBudget (`minAvailable: 1`), and is scheduled onto the
+dedicated `ingress` node (node-3) via nodeSelector/toleration — see
+`scripts/label-dedicated-nodes.sh`.
 
 ## Verify
 kubectl get pods -n ingress-nginx

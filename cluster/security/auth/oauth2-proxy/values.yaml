@@ -1,0 +1,50 @@
+# Single oauth2-proxy instance, path-routing to both protected tools.
+# Verify keys against `helm show values oauth2-proxy/oauth2-proxy` for the
+# pinned chart version before applying.
+config:
+  clientID: oauth2-proxy
+  existingSecret: dex-oauth2-proxy-client   # key: client-secret
+  cookieSecretExistingSecret: oauth2-proxy-cookie  # key: cookie-secret
+
+extraArgs:
+  provider: oidc
+  oidc-issuer-url: http://dex.auth.svc.cluster.local:5556/dex
+  redirect-url: https://kubequest.local/oauth2/callback
+  email-domain: "*"
+  cookie-secure: "true"
+  cookie-samesite: lax
+  skip-provider-button: "true"
+  whitelist-domain: .kubequest.local
+
+# Path-based routing to the two protected backends. If the chart version in
+# use doesn't support multiple `upstreams` entries with `path`, run two
+# separate oauth2-proxy releases instead (one per app) — simpler but doubles
+# the Ingress/cookie surface.
+upstreams:
+  - id: dashboard
+    path: /dashboard
+    uri: http://kubernetes-dashboard-kong-proxy.kubernetes-dashboard.svc.cluster.local:443
+  - id: grafana
+    path: /grafana
+    uri: http://monitoring-grafana.monitoring.svc.cluster.local:80
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+replicaCount: 2
+
+ingress:
+  enabled: true
+  className: nginx
+  path: /
+  hosts:
+    - kubequest.local
+  tls:
+    - secretName: kubequest-tls
+      hosts:
+        - kubequest.local

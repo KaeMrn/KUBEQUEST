@@ -1,0 +1,98 @@
+# ============================================================================
+# PLACEHOLDER VALUES. The real docker-compose app (from Gandalf) hasn't been
+# swapped in yet — see app/helm-chart/README.md "Known gap". Everything
+# below is wired correctly and deployable as-is (with a stand-in nginx
+# image) so the chart, GitOps repo, and automation can be exercised end to
+# end; only `image.repository`/`env`/`containerPort` need to change once the
+# real app is available.
+# ============================================================================
+
+replicaCount: 2
+
+image:
+  repository: nginxdemos/hello   # TODO: replace with the real app image
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+# Set if pulling from a private registry (bonus objective).
+imagePullSecrets: []
+# - name: regcred
+
+containerPort: 8080
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  host: app.kubequest.local
+  tls:
+    enabled: false
+    secretName: kubequest-app-tls
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# Redundancy: spread replicas across nodes, never co-locate 2 replicas on
+# the same node.
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+                - kubequest-app
+        topologyKey: kubernetes.io/hostname
+
+# Zero-downtime rolling updates: never go below `replicaCount`, allow 1 extra
+# pod during the rollout, and only route traffic once the readiness probe
+# passes (see deployment.yaml).
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 0
+    maxSurge: 1
+
+probes:
+  readiness:
+    path: /
+    initialDelaySeconds: 5
+    periodSeconds: 5
+  liveness:
+    path: /
+    initialDelaySeconds: 10
+    periodSeconds: 10
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 70
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Non-secret configuration. Secrets (DB credentials) come from an
+# *externally created* Secret referenced by secretName below — see
+# ../gitops/README.md "Secrets" and scripts/generate-app-secrets.sh.
+config:
+  APP_ENV: production
+  LOG_LEVEL: info
+
+secretName: app-db-credentials # created by scripts/generate-app-secrets.sh, not by this chart
+
+serviceAccount:
+  create: true
+  name: ""
+
+labels: {}

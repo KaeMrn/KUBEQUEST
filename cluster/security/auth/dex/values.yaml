@@ -1,0 +1,48 @@
+# Verify these keys against `helm show values dex/dex` for the pinned chart
+# version before applying — Dex's Helm chart config schema has changed
+# across major versions.
+config:
+  issuer: http://dex.auth.svc.cluster.local:5556/dex
+
+  storage:
+    type: kubernetes
+    config:
+      inCluster: true
+
+  web:
+    http: 0.0.0.0:5556
+
+  # DEMO connector only. For the real defense, swap this for a real
+  # connector (GitHub org, Google Workspace, LDAP/SAML against Epitech's
+  # own IdP...) under `connectors:` instead of static users.
+  staticPasswords: []
+  # ^ intentionally empty here — populated at deploy time from the
+  # `dex-static-passwords` Secret (see secret-template.yaml + generate below),
+  # never committed in plaintext.
+
+  staticClients:
+    - id: oauth2-proxy
+      # Real value injected from the `dex-oauth2-proxy-client` Secret at
+      # deploy time (see ../generate-secrets.sh) — this is a placeholder
+      # so `helm template` still renders something reviewable.
+      secretEnv: OAUTH2_PROXY_CLIENT_SECRET
+      redirectURIs:
+        - https://kubequest.local/oauth2/callback
+      name: "KubeQuest oauth2-proxy"
+
+envVars:
+  - name: OAUTH2_PROXY_CLIENT_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: dex-oauth2-proxy-client
+        key: client-secret
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+replicaCount: 1

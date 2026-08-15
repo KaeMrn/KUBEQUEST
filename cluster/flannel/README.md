@@ -10,8 +10,11 @@ Without Flannel, pods on different nodes cannot reach
 each other. Kubernetes requires a network plugin to 
 function correctly.
 
-## Installation
-kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+## Installation (GitOps, current approach)
+Tracked as a pinned remote manifest resource via Kustomize (not "latest",
+so re-applying is reproducible):
+
+    kubectl apply -k cluster/flannel
 
 ## Verify
 kubectl get pods -n kube-flannel

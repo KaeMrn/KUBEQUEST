@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - dex
+  - oauth2-proxy
+
+# Secrets (dex-oauth2-proxy-client, oauth2-proxy-cookie, dex-static-passwords)
+# are NOT resources here — they're created imperatively by generate-secrets.sh
+# so nothing sensitive is ever committed. Run that script before this
+# kustomization, or dex/oauth2-proxy will crash-loop on missing secretKeyRefs
+# (which is itself a decent live demo of a misconfigured Secret dependency).

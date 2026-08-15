@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Only the cluster-scoped RBAC lives here. app-deployer.yaml is namespaced
+# to `app`, which doesn't exist until app/gitops/base is applied — it's
+# referenced from there instead (see app/gitops/base/kustomization.yaml)
+# so ordering is correct without a separate manual step.
+resources:
+  - dashboard-viewer.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: kubequest
+  app.kubernetes.io/managed-by: kustomize

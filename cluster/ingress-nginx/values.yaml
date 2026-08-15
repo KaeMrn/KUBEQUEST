@@ -4,3 +4,46 @@ controller:
     nodePorts:
       http: 30080
       https: 30443
+
+  # Redundancy: 2 replicas spread across nodes (best-practices requirement).
+  replicaCount: 2
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                    - controller
+            topologyKey: kubernetes.io/hostname
+
+  # Schedule onto the dedicated "ingress" node (node-3), tainted via
+  # scripts/label-dedicated-nodes.sh, so it doesn't compete for resources
+  # with application/monitoring pods.
+  nodeSelector:
+    kubequest.io/role: ingress
+
+  tolerations:
+    - key: kubequest.io/dedicated
+      operator: Equal
+      value: ingress
+      effect: NoSchedule
+
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+  metrics:
+    enabled: true

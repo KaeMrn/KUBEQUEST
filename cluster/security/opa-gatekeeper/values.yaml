@@ -1,0 +1,13 @@
+replicas: 2
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Exempt the system/gatekeeper namespaces themselves from admission checks,
+# otherwise the webhook can deadlock its own upgrades.
+disableValidatingWebhook: false

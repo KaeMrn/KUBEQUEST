@@ -1,0 +1,55 @@
+# Official Bitnami postgresql chart values.
+# Verify keys against `helm show values bitnami/postgresql` for the pinned
+# chart version before applying — Bitnami renames/restructures keys across
+# major versions occasionally.
+
+architecture: replication # primary + N read replicas, per bootstrap.pdf "add 2 slaves"
+
+auth:
+  # Never plaintext here. Created by scripts/generate-app-secrets.sh, which
+  # populates keys: postgres-password, password, replication-password.
+  existingSecret: postgresql-auth
+  username: kubequest
+  database: kubequest
+
+primary:
+  persistence:
+    enabled: true
+    size: 10Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+  podAntiAffinityPreset: hard
+  nodeSelector: {}
+  # Answers bootstrap.pdf's "set max connections + SQL query timeout":
+  extendedConfiguration: |
+    max_connections = 200
+    statement_timeout = 30000
+
+readReplicas:
+  replicaCount: 2 # bootstrap.pdf: "add 2 slaves to your PostgreSQL server"
+  persistence:
+    enabled: true
+    size: 10Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+  podAntiAffinityPreset: hard
+
+metrics:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi

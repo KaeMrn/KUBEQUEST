@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: cert-manager
+
+resources:
+  - namespace.yaml
+
+helmCharts:
+  - name: cert-manager
+    repo: https://charts.jetstack.io
+    version: v1.15.3
+    releaseName: cert-manager
+    namespace: cert-manager
+    valuesFile: values.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: kubequest
+  app.kubernetes.io/managed-by: kustomize
+
+# The ClusterIssuer lives in ./cluster-issuer.yaml and is applied SEPARATELY
+# (see scripts/deploy-all.sh) after cert-manager's CRDs/webhook are Ready —
+# same two-step reason as OPA Gatekeeper's policies.

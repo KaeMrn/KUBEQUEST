@@ -4,3 +4,81 @@ grafana:
       type: loki
       url: http://loki:3100
       access: proxy
+
+  persistence:
+    enabled: true
+    size: 5Gi
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+
+  nodeSelector:
+    kubequest.io/role: monitoring
+  tolerations:
+    - key: kubequest.io/dedicated
+      operator: Equal
+      value: monitoring
+      effect: NoSchedule
+
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+    nodeSelector:
+      kubequest.io/role: monitoring
+    tolerations:
+      - key: kubequest.io/dedicated
+        operator: Equal
+        value: monitoring
+        effect: NoSchedule
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
+    nodeSelector:
+      kubequest.io/role: monitoring
+    tolerations:
+      - key: kubequest.io/dedicated
+        operator: Equal
+        value: monitoring
+        effect: NoSchedule
+
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi

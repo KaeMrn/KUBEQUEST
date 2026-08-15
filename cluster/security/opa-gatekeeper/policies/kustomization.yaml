@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - templates/require-resources.yaml
+  - templates/require-labels.yaml
+  - constraints/require-resources-constraint.yaml
+  - constraints/require-labels-constraint.yaml

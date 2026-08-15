@@ -1,0 +1,37 @@
+# Official kubernetes-dashboard Helm chart values.
+# Authentication is NOT handled by the dashboard's own login page here —
+# it sits behind the oauth2-proxy + dex setup in ../security/auth, so the
+# only way to reach it at all is through an authenticated SSO session.
+app:
+  ingress:
+    enabled: false # exposed via the oauth2-proxy-fronted Ingress instead, see ../security/auth
+
+kong:
+  # The chart's bundled Kong proxy isn't needed; oauth2-proxy sits in front instead.
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+api:
+  containers:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+
+web:
+  containers:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi

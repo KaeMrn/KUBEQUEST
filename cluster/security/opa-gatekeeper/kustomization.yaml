@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: gatekeeper-system
+
+resources:
+  - namespace.yaml
+
+helmCharts:
+  - name: gatekeeper
+    repo: https://open-policy-agent.github.io/gatekeeper/charts
+    version: 3.17.1
+    releaseName: gatekeeper
+    namespace: gatekeeper-system
+    valuesFile: values.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: kubequest
+  app.kubernetes.io/managed-by: kustomize
+
+# NOTE: the ConstraintTemplates/Constraints under ./policies are deliberately
+# NOT included here. Gatekeeper must register its CRDs and the validating
+# webhook must be Ready before those custom resources can be applied — see
+# scripts/deploy-all.sh, which applies this folder, waits for the webhook,
+# then applies ./policies.

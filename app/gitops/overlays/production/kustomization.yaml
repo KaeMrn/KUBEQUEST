@@ -1,0 +1,60 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: app-production
+
+resources:
+  - ../../base
+  # No separate Certificate resource needed: the cert-manager.io/cluster-issuer
+  # annotation added to the Ingress below (ingress-shim) makes cert-manager
+  # create and manage the Certificate automatically. Requires cluster/security/
+  # cert-manager to be installed and the ClusterIssuer applied first, and
+  # requires `app.kubequest.io` (placeholder — swap for a domain you actually
+  # own) to resolve to the ingress node's public IP for the HTTP01 challenge.
+
+patches:
+  - target:
+      kind: Namespace
+      name: app
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: app-production
+
+  - target:
+      kind: Ingress
+      name: kubequest-app
+    patch: |
+      - op: replace
+        path: /spec/rules/0/host
+        value: app.kubequest.io
+      - op: add
+        path: /metadata/annotations
+        value:
+          cert-manager.io/cluster-issuer: letsencrypt-prod
+      - op: add
+        path: /spec/tls
+        value:
+          - hosts:
+              - app.kubequest.io
+            secretName: kubequest-app-tls
+
+  # Production gets more headroom than the base defaults.
+  - target:
+      kind: Deployment
+      name: kubequest-app
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "1"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 512Mi
+
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: kubequest-app
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 3

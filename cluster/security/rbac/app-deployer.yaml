@@ -1,0 +1,51 @@
+# Least-privilege identity for scripts/deploy-all.sh and CI: can manage the
+# app's own workload/config resources in the `app` namespace, but has no
+# access to Secrets outside it, no cluster-scoped permissions, and no
+# access to other namespaces at all.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ci-deployer
+  namespace: app
+  labels:
+    app.kubernetes.io/part-of: kubequest
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: app-deployer
+  namespace: app
+  labels:
+    app.kubernetes.io/part-of: kubequest
+rules:
+  - apiGroups: ["", "apps", "batch", "autoscaling", "policy"]
+    resources:
+      - deployments
+      - statefulsets
+      - services
+      - configmaps
+      - secrets
+      - persistentvolumeclaims
+      - horizontalpodautoscalers
+      - poddisruptionbudgets
+      - jobs
+      - cronjobs
+      - pods
+      - pods/log
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: app-deployer
+  namespace: app
+  labels:
+    app.kubernetes.io/part-of: kubequest
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: app-deployer
+subjects:
+  - kind: ServiceAccount
+    name: ci-deployer
+    namespace: app

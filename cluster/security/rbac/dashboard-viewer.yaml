@@ -1,0 +1,31 @@
+# Replaces the common (insecure) practice of binding cluster-admin to the
+# dashboard's ServiceAccount. The dashboard is for observation/demo, not for
+# being a second kubectl with full write access — so it gets read-only.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kubequest-viewer
+  labels:
+    app.kubernetes.io/part-of: kubequest
+rules:
+  - apiGroups: ["", "apps", "batch", "networking.k8s.io", "autoscaling"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods", "nodes"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubernetes-dashboard-viewer
+  labels:
+    app.kubernetes.io/part-of: kubequest
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubequest-viewer
+subjects:
+  - kind: ServiceAccount
+    name: kubernetes-dashboard
+    namespace: kubernetes-dashboard

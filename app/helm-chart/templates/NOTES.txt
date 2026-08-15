@@ -1,0 +1,12 @@
+{{ include "kubequest-app.name" . }} deployed.
+
+Check rollout status:
+  kubectl -n {{ .Release.Namespace }} rollout status deployment/{{ include "kubequest-app.name" . }}
+
+{{- if .Values.ingress.enabled }}
+Reachable at: http{{ if .Values.ingress.tls.enabled }}s{{ end }}://{{ .Values.ingress.host }}
+{{- end }}
+
+{{- if .Values.autoscaling.enabled }}
+HPA: kubectl -n {{ .Release.Namespace }} get hpa {{ include "kubequest-app.name" . }}
+{{- end }}

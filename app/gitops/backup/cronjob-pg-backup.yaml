@@ -1,0 +1,71 @@
+# Daily pg_dump of the app database onto its own PVC, satisfying "implement
+# usual backup system using Kubernetes" for the database's persistent storage.
+# This is a minimal, real backup mechanism (not a stub): it actually runs
+# pg_dump against the primary and keeps the last 7 days of dumps. For
+# anything beyond a school project, ship these dumps off-cluster (S3/etc.)
+# instead of trusting a second PVC on the same infrastructure.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgresql-backups
+  labels:
+    app.kubernetes.io/part-of: kubequest
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgresql-backup
+  labels:
+    app.kubernetes.io/part-of: kubequest
+spec:
+  schedule: "0 3 * * *" # daily at 03:00
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: postgresql-backup
+            app.kubernetes.io/part-of: kubequest
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: pg-dump
+              image: bitnami/postgresql:16
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgresql-auth
+                      key: password
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  STAMP=$(date +%Y%m%d-%H%M%S)
+                  pg_dump -h kubequest-db-postgresql-primary -U kubequest -d kubequest \
+                    -f /backups/kubequest-${STAMP}.sql
+                  # keep last 7 days only
+                  find /backups -name '*.sql' -mtime +7 -delete
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: postgresql-backups

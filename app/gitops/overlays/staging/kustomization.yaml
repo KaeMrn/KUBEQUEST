@@ -1,0 +1,50 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: app-staging
+
+resources:
+  - ../../base
+
+patches:
+  # The base Namespace resource is literally named "app" (namespace.yaml) —
+  # the `namespace:` transformer above restamps every *namespaced* resource
+  # to app-staging, but it deliberately does not touch a Namespace object's
+  # own name (cluster-scoped kind), so that's patched explicitly here to
+  # keep the two in sync.
+  - target:
+      kind: Namespace
+      name: app
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: app-staging
+
+  - target:
+      kind: Deployment
+      name: kubequest-app
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+
+  - target:
+      kind: Ingress
+      name: kubequest-app
+    patch: |
+      - op: replace
+        path: /spec/rules/0/host
+        value: staging.app.kubequest.local
+
+  # Without this, the HPA (min 2 per base values.yaml) immediately scales the
+  # Deployment back up past the 1-replica patch above.
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: kubequest-app
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 3

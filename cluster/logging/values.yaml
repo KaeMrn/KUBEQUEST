@@ -1,0 +1,30 @@
+promtail:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+loki:
+  persistence:
+    enabled: true
+    size: 10Gi
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  nodeSelector:
+    kubequest.io/role: monitoring
+  tolerations:
+    - key: kubequest.io/dedicated
+      operator: Equal
+      value: monitoring
+      effect: NoSchedule

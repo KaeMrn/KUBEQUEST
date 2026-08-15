@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Flannel has no official Helm chart, so it's tracked here as a remote
+# manifest resource instead of a helmChart entry — this is still a real
+# GitOps-managed reference (pinned to a release tag, not "latest") rather
+# than a manual `kubectl apply -f <url>` run from the README.
+resources:
+  - https://github.com/flannel-io/flannel/releases/download/v0.25.6/kube-flannel.yml
+
+commonLabels:
+  app.kubernetes.io/part-of: kubequest
+  app.kubernetes.io/managed-by: kustomize

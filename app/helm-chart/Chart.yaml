@@ -1,0 +1,12 @@
+apiVersion: v2
+name: kubequest-app
+description: >
+  Helm chart converting the docker-compose application provided on Gandalf
+  into Kubernetes-native resources. The image/env in values.yaml are
+  placeholders — see README.md "Known gap" before using this for real.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - kubequest
+  - epitech
