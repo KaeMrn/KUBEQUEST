@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 # Deploys the entire KubeQuest stack in the correct dependency order.
-# Matches the defense requirement: "deploy the services into the
-# orchestrator using nothing more than kubectl apply -f ..., kustomize...,
-# helm ..." — this script is a thin, transparent wrapper around exactly
-# those commands, not a hidden abstraction.
+# Every step below is just kubectl apply -f/-k, kustomize, or helm — no
+# hidden abstraction, matching the project's deployment constraints.
 #
 # Usage: ./deploy-all.sh [staging|production]
 set -euo pipefail

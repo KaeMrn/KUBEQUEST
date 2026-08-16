@@ -12,7 +12,7 @@ config:
   web:
     http: 0.0.0.0:5556
 
-  # DEMO connector only. For the real defense, swap this for a real
+  # Static-password connector for local testing only — swap for a real
   # connector (GitHub org, Google Workspace, LDAP/SAML against Epitech's
   # own IdP...) under `connectors:` instead of static users.
   staticPasswords: []

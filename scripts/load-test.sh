@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Live-demo script for the defense: hammer the app with `hey` to trigger the
-# HPA (min 2 -> up to 8 replicas at 70% CPU, see app/helm-chart/values.yaml)
-# and watch it scale in a second terminal with:
+# Hammers the app with `hey` to trigger the HPA (min 2 -> up to 8 replicas
+# at 70% CPU, see app/helm-chart/values.yaml). Watch it scale in a second
+# terminal with:
 #   kubectl -n app-<env> get hpa kubequest-app -w
 #
 # Requires `hey` (https://github.com/rakyll/hey): brew install hey

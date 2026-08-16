@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Sideloads the locally-built app image onto every node (containerd).
-# School-project path: no public registry or Docker Hub login required.
+# No registry needed: exports from the local Docker daemon and imports
+# straight into containerd on each node.
 #
 # Usage: ./load-app-image-to-nodes.sh [image:tag]
 # Prerequisites: terraform apply done, infra/kubequest.pem present,

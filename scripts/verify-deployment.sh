@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Full health check across every component — run after deploy-all.sh, or on
-# its own to sanity-check an existing cluster before the defense.
+# its own to sanity-check an existing cluster.
 set -uo pipefail
 
 ENV="${1:-staging}"

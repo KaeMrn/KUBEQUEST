@@ -1,9 +1,9 @@
 # Authentication — Dex + oauth2-proxy
 
 ## What is it
-- **Dex**: OIDC identity provider. Here configured with a demo static-password
-  connector — swap for a real connector (GitHub org, Google Workspace, SAML)
-  before relying on this for anything beyond the defense demo.
+- **Dex**: OIDC identity provider. Configured here with a static-password
+  connector for local testing — swap for a real connector (GitHub org,
+  Google Workspace, SAML) before relying on this beyond that.
 - **oauth2-proxy**: sits in front of the Kubernetes Dashboard and Grafana,
   redirecting unauthenticated requests to Dex and only forwarding the
   request to the upstream once a valid OIDC session exists.

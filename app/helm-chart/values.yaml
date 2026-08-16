@@ -1,9 +1,5 @@
-# ============================================================================
-# Real app: the Laravel "counter" sample app from Gandalf (app/src), built
-# from app/src/Dockerfile via scripts/build-and-push-app-image.sh. Only
-# image.repository/tag need to change per where you pushed the built image —
-# everything else here matches the app's actual requirements.
-# ============================================================================
+# Deploys the Laravel "counter" app in app/src, built from
+# app/src/Dockerfile via scripts/build-and-push-app-image.sh.
 
 replicaCount: 2
 

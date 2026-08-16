@@ -53,7 +53,7 @@ scripts/load-app-image-to-nodes.sh kubequest-app:v1
 do have a registry, omit `--local` and set `image.repository`/`image.tag`
 to match the pushed image.
 
-## How to rebuild from scratch (defense day)
+## Rebuild from scratch
 
 ```bash
 cd infra/terraform && terraform init && terraform apply -var="key_name=kubequest"
@@ -77,4 +77,4 @@ kubectl get nodes
 kubectl get pods --all-namespaces
 ```
 
-See `docs/RUNBOOK.md` for the full defense-day walkthrough and talking points.
+See `docs/RUNBOOK.md` for the full deployment walkthrough.

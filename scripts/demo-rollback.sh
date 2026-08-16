@@ -1,15 +1,12 @@
 #!/usr/bin/env bash
-# Defense-day demo: "demonstrate a full deployment process and a broken
-# deployment with automatic rollback."
+# Deploys a broken image on purpose, then rolls back automatically.
 #
-# Note on the word "automatic": vanilla Kubernetes does NOT roll back a bad
-# Deployment by itself — a rollout that never becomes Ready just sits there
-# (progressDeadlineSeconds only flags it as ProgressDeadlineExceeded, it
-# doesn't revert anything). This script IS the automation: it watches the
-# rollout and calls `kubectl rollout undo` the moment it detects failure,
-# which is the standard way to get "automatic rollback" without a heavier
-# tool like Argo Rollouts. Say this out loud during the defense — don't
-# imply kubectl does this on its own.
+# Vanilla Kubernetes does not roll back a bad Deployment by itself — a
+# rollout that never becomes Ready just sits there (progressDeadlineSeconds
+# only flags it as ProgressDeadlineExceeded, it doesn't revert anything).
+# This script is the automation: it watches the rollout and calls
+# `kubectl rollout undo` the moment it detects failure. That's the standard
+# way to get automatic rollback without a heavier tool like Argo Rollouts.
 set -uo pipefail
 
 ENV="${1:-staging}"
@@ -37,10 +34,10 @@ if kubectl -n "$NS" rollout status "deployment/${DEPLOY}" --timeout="${TIMEOUT}"
 fi
 
 echo
-echo "== Broken pods (for the audience to see) =="
-echo "Note: maxUnavailable=0 in the Deployment strategy means the OLD, healthy"
-echo "pods are still serving traffic right now — the broken rollout never took"
-echo "the app down. Worth pointing out live as the zero-downtime bonus."
+echo "== Broken pods =="
+echo "maxUnavailable=0 in the Deployment strategy means the old, healthy pods"
+echo "are still serving traffic right now — the broken rollout never took the"
+echo "app down (zero-downtime deploy)."
 kubectl -n "$NS" get pods -l app.kubernetes.io/name=kubequest-app
 
 echo

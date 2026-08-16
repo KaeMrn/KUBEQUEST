@@ -1,8 +1,9 @@
-# Defense-day runbook
+# Deployment runbook
 
-Matches `project.pdf`'s "Defense" section requirements point by point.
+Step-by-step rebuild and demo procedure for KubeQuest, matching the project's
+Defense section requirements.
 
-## 1. Before presenting: fresh cluster
+## 1. Fresh cluster
 
 ```bash
 cd infra/terraform
@@ -23,11 +24,11 @@ Pull the kubeconfig to your laptop:
 scp -i infra/kubequest.pem ec2-user@<node-1-public-ip>:~/.kube/config ~/.kube/config
 ```
 
-## 2. While presenting: deploy with nothing but kubectl/kustomize/helm
+## 2. Deploy with nothing but kubectl/kustomize/helm
 
-`scripts/deploy-all.sh` is a transparent wrapper — every line in it is one of
-exactly the three commands the spec allows. Either run the script live, or
-run its steps one at a time to narrate each:
+`scripts/deploy-all.sh` wraps exactly the three commands the spec allows —
+kubectl apply, kustomize, helm — in the right order. It can be run directly,
+or step by step:
 
 ```bash
 kubectl apply -k cluster/flannel
@@ -65,13 +66,13 @@ a few minutes after the load stops.
 ```bash
 scripts/demo-rollback.sh staging
 ```
-Narrate: the new (broken) ReplicaSet never becomes Ready (ImagePullBackOff),
-`maxUnavailable: 0` keeps the OLD pods serving traffic the entire time (zero
-downtime), the script detects the failed rollout and runs `kubectl rollout
-undo` — that script *is* the "automatic" part; vanilla Kubernetes doesn't
-self-revert a stuck rollout on its own.
+The new (broken) ReplicaSet never becomes Ready (ImagePullBackOff).
+`maxUnavailable: 0` keeps the old pods serving traffic the whole time (zero
+downtime), and the script detects the failed rollout and runs `kubectl
+rollout undo` itself — vanilla Kubernetes doesn't self-revert a stuck
+rollout, so the script is what makes it automatic.
 
-## 5. Talking points per spec section, mapped to files
+## 5. Spec requirements mapped to files
 
 | Spec requirement | Where |
 |---|---|
@@ -96,14 +97,13 @@ self-revert a stuck rollout on its own.
 | Zero-downtime deploys (bonus) | `app/helm-chart/values.yaml` `strategy.rollingUpdate` |
 | Private registry pull (bonus) | `app/helm-chart/values.yaml` `imagePullSecrets` (wire in once there's a real private image) |
 
-## Before the defense: local values, not a public domain
+## Local values in this setup
 - App image: already set to `kubequest-app:v1`. Rebuild with
   `scripts/build-and-push-app-image.sh kubequest-app v1 --local`, then
   `scripts/load-app-image-to-nodes.sh` after the EC2 nodes exist.
 - Production TLS uses cert-manager's **self-signed** ClusterIssuer and
-  `app.kubequest.local` — no hostname to buy. The Let's Encrypt issuer is
-  still installed (`cluster-issuer.yaml`) as the "how you'd do it for real"
-  talking point.
-- Add these to `/etc/hosts` on the machine you present from, pointing at
-  the ingress node's public IP:
+  `app.kubequest.local` — no hostname to buy. `letsencrypt-prod`
+  (`cluster-issuer.yaml`) is also installed and ready to switch to once
+  there's a real domain.
+- Add these to `/etc/hosts`, pointing at the ingress node's public IP:
   `kubequest.local`, `app.kubequest.local`, `staging.app.kubequest.local`.

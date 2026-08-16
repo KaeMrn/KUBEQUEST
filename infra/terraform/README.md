@@ -35,6 +35,6 @@ terraform output control_plane_private_ip
 terraform destroy -var="key_name=kubequest"
 ```
 
-Since the spec requires a **fresh cluster before the defense**, `terraform apply` after a
+The spec requires starting from a fresh cluster, so `terraform apply` after a
 `terraform destroy` is the fast path to a clean environment — see
 `../../scripts/bootstrap-cluster.sh` for the kubeadm steps that follow provisioning.

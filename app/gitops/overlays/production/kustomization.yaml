@@ -7,10 +7,10 @@ resources:
   - ../../base
   # No separate Certificate resource needed: the cert-manager.io/cluster-issuer
   # annotation added to the Ingress below (ingress-shim) makes cert-manager
-  # create and manage the Certificate automatically. School demo uses the
-  # self-signed ClusterIssuer + app.kubequest.local in /etc/hosts (no public
-  # domain). Swap the issuer to letsencrypt-prod and the host to a real
-  # DNS name if you ever want a publicly-trusted cert.
+  # create and manage the Certificate automatically. Uses the self-signed
+  # ClusterIssuer + app.kubequest.local in /etc/hosts (no public domain
+  # registered). Swap the issuer to letsencrypt-prod and the host to a real
+  # DNS name for a publicly-trusted cert.
 
 patches:
   - target:

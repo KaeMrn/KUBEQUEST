@@ -1,9 +1,8 @@
 # Daily mysqldump of the app database onto its own PVC, satisfying "implement
 # usual backup system using Kubernetes" for the database's persistent storage.
-# This is a minimal, real backup mechanism (not a stub): it actually runs
-# mysqldump against kubequest-db-mysql and keeps the last 7 days of dumps.
-# For anything beyond a school project, ship these dumps off-cluster
-# (S3/etc.) instead of trusting a second PVC on the same infrastructure.
+# It actually runs mysqldump against kubequest-db-mysql and keeps the last
+# 7 days of dumps. In production, ship these off-cluster (S3/etc.) instead
+# of trusting a second PVC on the same infrastructure.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-# Bootstraps a fresh kubeadm cluster on Amazon Linux 2023, matching the
-# project's "before presenting, start a fresh new Kubernetes cluster"
-# defense-day requirement.
+# Bootstraps a fresh kubeadm cluster on Amazon Linux 2023.
 #
 # Usage:
 #   On EVERY node (node-1..node-4):
